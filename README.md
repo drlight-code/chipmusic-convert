@@ -18,7 +18,7 @@ formats into wav/ogg.
 * http://sc68.atari.org/musics.html - sc68 music collection
 
 ## Other chipmusic sites:
-* http://www.creamhq.de/ymrockerz/index.php
+* http://www.creamhq.de/ymrockerz/index.php - YM Rockerz
 
 If you know of any chipmusic archives or pages that are missing here,
 please let me know!
