@@ -1,7 +1,7 @@
 # chipmusic-convert
 
 Set of python scripts to conveniently convert different chipmusic
-formats into wav/ogg.
+formats into wav/ogg/flac.
 
 ## Planned support:
 * Atari SAP
@@ -34,6 +34,7 @@ Format        | Package
 SNDH          | sndplayer - http://sndplayer.atari.org/downloads.php
 sc68          | sc68 - http://sc68.atari.org/download.html
 ogg           | vorbis-tools - http://www.vorbis.com
+flac          | flac - https://xiph.org/flac/download.html
 
 Optional: saunaklub music collection (will be available on github
 soon)
