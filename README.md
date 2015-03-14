@@ -23,8 +23,17 @@ formats into wav/ogg.
 If you know of any chipmusic archives or pages that are missing here,
 please let me know!
 
-## Required software
-* sndplayer - http://sndplayer.atari.org/downloads.php
-* sc68 - http://sc68.atari.org/download.html
-* Optional: saunaklub music collection (will be available on github
+## Required software by format
+
+chipmusic-convert relies on different software packages to do the
+actual conversion from the chipmusic formats to wav/ogg. The following
+table shows which packages are used for each of the formats:
+
+Format        | Package
+------------- | -------------
+SNDH          | sndplayer - http://sndplayer.atari.org/downloads.php
+sc68          | sc68 - http://sc68.atari.org/download.html
+ogg           | vorbis-tools - http://www.vorbis.com
+
+Optional: saunaklub music collection (will be available on github
 soon)
