@@ -10,6 +10,9 @@ formats into wav/ogg/flac.
 * Amiga MOD
 * sc68 format
 
+## Supported:
+* Commodore64 SID
+
 ## Chipmusic archives:
 * http://asma.atari.org/ - Atari SAP Music Archive
 * http://sndh.atari.org/ - Atari ST YM2149 Archive
