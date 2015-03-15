@@ -4,21 +4,41 @@
 # Convert chiptune tracker formats to wav/ogg/flac conveniently
 
 import sys
+import os
 import getopt
 
 def main():
-    arg_config, sources = parse_arguments()
+    cc_config = {}
 
-    print("chipmusic-convert")
-    print("recursive = ", arg_config['recursive'])
+    # set default config values
+    cc_config['recursive'] = False
     
 
-# returns
+    sources = parse_arguments(cc_config)
+    print_config(cc_config, sources)
+
+    source_filenames = []
+    for source in sources:
+        source_filenames.extend(collect_source_filenames(cc_config, source))
+
+    print(source_filenames)
+    
+
+def print_config(config, sources):
+    print("sources:")
+    print(', '.join(sources))
+
+    print()
+    print("recursive: ", config['recursive'])
+    print()
+
+              
+# parse_arguments
+#
+# returns:
 # 1. a dictionary with commandline argument settings
 # 2. the remaining non-option arguments
-def parse_arguments():
-    arg_config = {}
-
+def parse_arguments(config):
     help_text="""chipmusic-convert - convert chip music formats to wav/ogg/flac
 
 Synopsis:
@@ -33,12 +53,9 @@ Options:
     Descend into subfolders for all folder sources.
 """
     
-    # set default option values
-    arg_config['recursive'] = False
-    
     # parse command line options
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hr", ["help", "recursive"])
+        opts, args = getopt.gnu_getopt(sys.argv[1:], "hr", ["help", "recursive"])
     except getopt.error as msg:
         print(msg)
         print("for help use --help")
@@ -50,14 +67,38 @@ Options:
             print(help_text)
             sys.exit(0)
         if option in ("-r", "--recursive"):
-            arg_config['recursive'] = True
+            config['recursive'] = True
             
     # process arguments
     # for arg in args:
     #     process(arg) # process() is defined elsewhere
 
-    return arg_config, args
-    
-        
+    return args
+
+
+def collect_source_filenames(config, source):
+    source_filenames = []
+
+    if not os.path.exists(source):
+        print("WARNING: source " + source + " does not exist! Ignoring.")
+        return source_filenames
+
+    if os.path.isdir(source):
+        if config['recursive']:
+            for dirpath, dirnames, filenames in os.walk(source):
+                for filename in filenames:
+                    if filename.endswith('.sid'):
+                        source_filenames.append(os.path.abspath(dirpath+'/'+filename))
+        else:
+            entries = os.listdir(source)
+            for entry in entries:
+                if entry.endswith('.sid'):
+                    source_filenames.append(os.path.abspath(source+'/'+entry))
+    else:
+        source_filenames.append(os.path.abspath(source))
+
+    return source_filenames
+
+
 if __name__ == "__main__":
     main()
