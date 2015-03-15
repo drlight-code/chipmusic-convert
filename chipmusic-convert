@@ -27,9 +27,13 @@ def main():
     cc_config['formats'] = ['ogg']
     cc_config['numthreads'] = 1
     
-    map_ending_type = {}
-    map_ending_type['sid'] = 'SID'
-    
+    map_ending_type = {
+        'sid' : 'SID',
+        'SID' : 'SID',
+        'snd' : 'SNDH',
+        'SND' : 'SNDH',
+    }
+
     sources = parse_arguments(cc_config)
     print_config(cc_config, sources)
 
@@ -48,7 +52,11 @@ def main():
         for file in source_filenames:
             fut = executor.submit(convert_file, file, cc_config, map_ending_type)
             futures.append(fut)
-        concurrent.futures.wait(futures)
+
+        for fut in futures:
+            if(fut.exception()):
+                print(fut.exception())
+#        concurrent.futures.wait(futures)
 
         shutil.rmtree(cc_config['tmpdir'])
     
@@ -174,9 +182,6 @@ def convert_file(file, config, map_ending_type):
             break
     type = map_ending_type[ending]
 
-    # @todo look command up from map by type
-    command = ['sidplay2', '-s', '-w', file]
-
     filebase = os.path.basename(file[:-(len(ending)+1)])
 
     # if of any format the target files do not exist...
@@ -190,50 +195,58 @@ def convert_file(file, config, map_ending_type):
             
     # ...except when the wav files are present...
     if glob.glob(destdir + '/' + filebase + '*.wav'):
-        print(destdir + '/' + filebase + '*.wav' + ' is present')
         rebuildwav = False
 
     # ... rebuild wav.
     if rebuildwav or config['overwrite']:
-        print(' '.join(command))
-        p = Popen(command, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate()
+        render_to_wavfile(file, type)
+        
+    conversion_formats = list(config['formats'])
+    if 'wav' in conversion_formats:
+         conversion_formats.remove('wav')
 
     wavfiles = os.listdir('.')
     if not wavfiles:
         wavfiles = glob.glob(destdir + '/' + filebase + '*.wav')
+
     for wavfile in wavfiles:
         if wavfile.endswith('.wav'):
             if 'wav' in config['formats']:
-                wavfile_target = destdir + '/' + wavfile
+                wavfile_target = destdir + '/' + os.path.basename(wavfile)
                 if not os.path.exists(wavfile_target) or config['overwrite']:
                     shutil.copy(wavfile, wavfile_target)
-            if 'ogg' in config['formats']:
-                oggfile = os.path.basename(wavfile[:-3]) + 'ogg'
-                oggfile_target = destdir + '/' + oggfile
-                if not os.path.exists(oggfile_target) or config['overwrite']:
-                    encode_ogg(wavfile, oggfile)
-                    shutil.copy(oggfile, oggfile_target)
-                    os.remove(oggfile)
-            if 'flac' in config['formats']:
-                flacfile = os.path.basename(wavfile[:-3]) + 'flac'
-                flacfile_target = destdir + '/' + flacfile
-                if not os.path.exists(flacfile_target) or config['overwrite']:
-                    encode_flac(wavfile, flacfile)
-                    shutil.copy(flacfile, flacfile_target)
-                    os.remove(flacfile)
+
+            for format in conversion_formats:
+                print('converting to ' + format)
+                outfile = os.path.basename(wavfile[:-3]) + format
+                outfile_target = destdir + '/' + outfile
+                if not os.path.exists(outfile_target) or config['overwrite']:
+                    encode_wavfile(format, wavfile, outfile)
+                    shutil.copy(outfile, outfile_target)
+                    os.remove(outfile)
 
         if os.path.exists(os.path.basename(wavfile)):
             os.remove(os.path.basename(wavfile))
-        
 
-def encode_ogg(wavfile, oggfile):
-    command = ['oggenc', '-q', str(8), '-o', oggfile, wavfile]
+def render_to_wavfile(file, type):
+    command = {
+        'SID': ['sidplay2', '-s', '-w', file]
+    }[type]
+    print(' '.join(command))
+
+    p = Popen(command, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate()
+
+
+def encode_wavfile(format, wavfile, outfile):
+    command = {
+        'ogg':  ['oggenc', '-q', str(8), '-o', outfile, wavfile],
+        'flac': ['flac', '-8', '-o', outfile, wavfile]
+    }[format]
+
+    print(' '.join(command))
     subprocess.call(command)
 
-def encode_flac(wavfile, flacfile):
-    command = ['flac', '-8', '-o', flacfile, wavfile]
-    subprocess.call(command)
-
-if __name__ == "__main__":
+    
+if __name__ == '__main__':
     main()
