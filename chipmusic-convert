@@ -22,9 +22,11 @@ def main():
     cc_config = {}
     cc_config['tmpdir'] = '/tmp/chipmusic-convert.' + \
                           str(datetime.datetime.now()).replace(' ', '.')
+    cc_config['verbose']   = False
     cc_config['recursive'] = False
     cc_config['overwrite'] = False
     cc_config['formats'] = ['ogg']
+    cc_config['quality'] = str(8)
     cc_config['numthreads'] = 1
     
     map_ending_type = {
@@ -65,6 +67,7 @@ def print_config(config, sources):
     print("tmpdir:     ", config['tmpdir'])
     print("recursive:  ", config['recursive'])
     print("formats:    ", config['formats'])
+    print("quality:    ", config['quality'])
     print("numthreads: ", config['numthreads'])
     print()
 
@@ -84,28 +87,33 @@ directory with files to be converted. After the options, any number of
 source files and directories can be given.
 
 Options:
-  -r, --recursive:
-    Descend into subdirectories for all directory sources.
-  -f, --formats format[,format...]:
-    List of formats to save (wav, ogg, flac). Default: ogg
   -d, --destination destdir
     The destination directory where all converted files will be placed. 
     Default: Each output file is placed next to its source file.
-  -o, --overwrite
-    Regenerate files even if already present.
+  -f, --formats format[,format...]:
+    List of formats to save (wav, ogg, flac). Default: ogg
   -j, --parallel numthreads
     Use numthreads parallel threads for conversion.
-    
+  -o, --overwrite
+    Regenerate files even if already present.
+  -q, --quality
+    Quality for ogg encoding (10 best - 0 worse). Default: 8
+  -r, --recursive:
+    Descend into subdirectories for all directory sources.
+  -v, --verbose
+    Show child process output.    
 """
     
     # parse command line options
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:],
-                                       "hrof:d:j:",
+                                       "hvrof:q:d:j:",
                                        ["help",
+                                        "verbose"
                                         "recursive",
                                         "overwrite"
                                         "formats=",
+                                        "quality=",
                                         "destination=",
                                         "parallel="])
     except getopt.error as msg:
@@ -118,6 +126,8 @@ Options:
         if option in ("-h", "--help"):
             print(help_text)
             sys.exit(0)
+        if option in ("-v", "--verbose"):
+            config['verbose'] = True
         if option in ("-r", "--recursive"):
             config['recursive'] = True
         if option in ("-o", "--overwrite"):
@@ -126,6 +136,8 @@ Options:
             config['destination'] = value
         if option in ("-f", "--formats"):
             config['formats'] = value.split(',')
+        if option in ("-q", "--quality"):
+            config['quality'] = value
         if option in ("-j", "--parallel"):
             config['numthreads'] = int(value)
             
@@ -191,7 +203,7 @@ def convert_file(file, config, map_ending_type):
             rebuildwav = True
 
     if rebuildwav:
-        print("Converting " + file)
+        print("Converting: " + file)
             
     # ...except when the wav files are present...
     if glob.glob(destdir + '/' + filebase + '*.wav'):
@@ -199,7 +211,7 @@ def convert_file(file, config, map_ending_type):
 
     # ... rebuild wav.
     if rebuildwav or config['overwrite']:
-        render_to_wavfile(file, type)
+        render_to_wavfile(file, type, config['verbose'])
         
     conversion_formats = list(config['formats'])
     if 'wav' in conversion_formats:
@@ -217,35 +229,44 @@ def convert_file(file, config, map_ending_type):
                     shutil.copy(wavfile, wavfile_target)
 
             for format in conversion_formats:
-                print('converting to ' + format)
                 outfile = os.path.basename(wavfile[:-3]) + format
                 outfile_target = destdir + '/' + outfile
                 if not os.path.exists(outfile_target) or config['overwrite']:
-                    encode_wavfile(format, wavfile, outfile)
+                    encode_wavfile(format, config['quality'],
+                                   wavfile, outfile,
+                                   config['verbose'])
                     shutil.copy(outfile, outfile_target)
                     os.remove(outfile)
 
         if os.path.exists(os.path.basename(wavfile)):
             os.remove(os.path.basename(wavfile))
 
-def render_to_wavfile(file, type):
+def render_to_wavfile(file, type, verbose):
     command = {
         'SID': ['sidplay2', '-s', '-w', file]
     }[type]
-    print(' '.join(command))
 
-    p = Popen(command, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = p.communicate()
+    if verbose:
+        print(' '.join(command))
+        subprocess.call(command)
+    else:
+        p = Popen(command, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
 
 
-def encode_wavfile(format, wavfile, outfile):
+def encode_wavfile(format, quality, wavfile, outfile, verbose):
     command = {
-        'ogg':  ['oggenc', '-q', str(8), '-o', outfile, wavfile],
+        'ogg':  ['oggenc', '-q', quality, '-o', outfile, wavfile],
         'flac': ['flac', '-8', '-o', outfile, wavfile]
     }[format]
 
-    print(' '.join(command))
-    subprocess.call(command)
+    if verbose:
+        print(' '.join(command))
+        subprocess.call(command)
+    else:
+        print('Encoding:   ' + outfile)
+        p = Popen(command, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
 
     
 if __name__ == '__main__':
