@@ -20,10 +20,12 @@ from concurrent.futures import ThreadPoolExecutor
 def main():
     # set default config values
     cc_config = {}
-    cc_config['recursive'] = False
     cc_config['tmpdir'] = '/tmp/chipmusic-convert.' + \
                           str(datetime.datetime.now()).replace(' ', '.')
+    cc_config['recursive'] = False
+    cc_config['overwrite'] = False
     cc_config['formats'] = ['ogg']
+    cc_config['numthreads'] = 1
     
     map_ending_type = {}
     map_ending_type['sid'] = 'SID'
@@ -41,26 +43,21 @@ def main():
     os.mkdir(cc_config['tmpdir'])
     os.chdir(cc_config['tmpdir'])
 
-    executor = ThreadPoolExecutor(max_workers=2)
-    futures = []
-    fut = None
-    for file in source_filenames:
-        fut = executor.submit(convert_file, file, cc_config, map_ending_type)
-        futures.append(fut)
-        print('submitted ' + str(len(futures)) + ' futures')
+    with ThreadPoolExecutor(max_workers=cc_config['numthreads']) as executor:
+        futures = []
+        for file in source_filenames:
+            fut = executor.submit(convert_file, file, cc_config, map_ending_type)
+            futures.append(fut)
+        concurrent.futures.wait(futures)
 
-    concurrent.futures.wait(futures)
-
-    #shutil.rmtree(cc_config['tmpdir'])
+        shutil.rmtree(cc_config['tmpdir'])
     
 
 def print_config(config, sources):
-    print("sources:")
-    print(', '.join(sources))
-
-    print()
-    print("recursive: ", config['recursive'])
-    print("tmpdir:    ", config['tmpdir'])
+    print("tmpdir:     ", config['tmpdir'])
+    print("recursive:  ", config['recursive'])
+    print("formats:    ", config['formats'])
+    print("numthreads: ", config['numthreads'])
     print()
 
               
@@ -86,6 +83,8 @@ Options:
   -d, --destination destdir
     The destination directory where all converted files will be placed. 
     Default: Each output file is placed next to its source file.
+  -o, --overwrite
+    Regenerate files even if already present.
   -j, --parallel numthreads
     Use numthreads parallel threads for conversion.
     
@@ -94,11 +93,13 @@ Options:
     # parse command line options
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:],
-                                       "hrf:d:",
+                                       "hrof:d:j:",
                                        ["help",
                                         "recursive",
+                                        "overwrite"
                                         "formats=",
-                                        "destination="])
+                                        "destination=",
+                                        "parallel="])
     except getopt.error as msg:
         print(msg)
         print("for help use --help")
@@ -111,10 +112,14 @@ Options:
             sys.exit(0)
         if option in ("-r", "--recursive"):
             config['recursive'] = True
+        if option in ("-o", "--overwrite"):
+            config['overwrite'] = True
         if option in ("-d", "--destination"):
             config['destination'] = value
         if option in ("-f", "--formats"):
             config['formats'] = value.split(',')
+        if option in ("-j", "--parallel"):
+            config['numthreads'] = int(value)
             
     # process arguments
     # for arg in args:
@@ -157,8 +162,6 @@ def conditional_append(list, name, endings):
 
 
 def convert_file(file, config, map_ending_type):
-    print("Converting " + file)
-
     destdir = os.path.dirname(file)
     if 'destination' in config:
         destdir = config['destination']
@@ -182,13 +185,16 @@ def convert_file(file, config, map_ending_type):
         if not glob.glob(destdir + '/' + filebase + '*.' + format):
             rebuildwav = True
 
+    if rebuildwav:
+        print("Converting " + file)
+            
     # ...except when the wav files are present...
     if glob.glob(destdir + '/' + filebase + '*.wav'):
         print(destdir + '/' + filebase + '*.wav' + ' is present')
         rebuildwav = False
 
     # ... rebuild wav.
-    if rebuildwav:
+    if rebuildwav or config['overwrite']:
         print(' '.join(command))
         p = Popen(command, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
@@ -200,19 +206,19 @@ def convert_file(file, config, map_ending_type):
         if wavfile.endswith('.wav'):
             if 'wav' in config['formats']:
                 wavfile_target = destdir + '/' + wavfile
-                if not os.path.exists(wavfile_target):
+                if not os.path.exists(wavfile_target) or config['overwrite']:
                     shutil.copy(wavfile, wavfile_target)
             if 'ogg' in config['formats']:
                 oggfile = os.path.basename(wavfile[:-3]) + 'ogg'
                 oggfile_target = destdir + '/' + oggfile
-                if not os.path.exists(oggfile_target):
+                if not os.path.exists(oggfile_target) or config['overwrite']:
                     encode_ogg(wavfile, oggfile)
                     shutil.copy(oggfile, oggfile_target)
                     os.remove(oggfile)
             if 'flac' in config['formats']:
                 flacfile = os.path.basename(wavfile[:-3]) + 'flac'
                 flacfile_target = destdir + '/' + flacfile
-                if not os.path.exists(flacfile_target):
+                if not os.path.exists(flacfile_target) or config['overwrite']:
                     encode_flac(wavfile, flacfile)
                     shutil.copy(flacfile, flacfile_target)
                     os.remove(flacfile)
