@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+# chipmusic-convert
+# Convert chiptune tracker formats to wav/ogg/flac conveniently
+
+import sys
+import getopt
+
+def main():
+    arg_config = parse_arguments()
+
+    print("chipmusic-convert")
+    print("recursive = ", arg_config['recursive'])
+    
+
+def parse_arguments():
+    arg_config = {}
+    
+    # set default option values
+    arg_config['recursive'] = False
+    
+    # parse command line options
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hr", ["help", "recursive"])
+    except getopt.error as msg:
+        print(msg)
+        print("for help use --help")
+        sys.exit(1)
+
+    # process options
+    for option, value in opts:
+        if option in ("-h", "--help"):
+            print(__doc__)
+            sys.exit(0)
+        if option in ("-r", "--recursive"):
+            arg_config['recursive'] = True
+            
+    # process arguments
+    # for arg in args:
+    #     process(arg) # process() is defined elsewhere
+
+    return arg_config
+    
+        
+if __name__ == "__main__":
+    main()
