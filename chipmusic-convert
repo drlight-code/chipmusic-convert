@@ -71,7 +71,7 @@ Options:
   -r, --recursive:
     Descend into subdirectories for all directory sources.
   -f, --formats format[,format...]:
-    List of formats to save (wav, ogg, flac).
+    List of formats to save (wav, ogg, flac). Default: ogg
   -d, --destination
     The destination directory where all converted files will be placed. 
     Default: Each output file is placed next to its source file.
