@@ -5,16 +5,24 @@
 
 import sys
 import os
+import subprocess
+import shutil
+
 import getopt
+import datetime
+
+from subprocess import Popen, PIPE
 
 def main():
     # set default config values
     cc_config = {}
     cc_config['recursive'] = False
-
-    ending_type = {}
-    ending_type['sid'] = 'SID'
-    print(ending_type.keys())
+    cc_config['tmpdir'] = '/tmp/chipmusic-convert.' + \
+                          str(datetime.datetime.now()).replace(' ', '.')
+    cc_config['formats'] = ['wav']
+    
+    map_ending_type = {}
+    map_ending_type['sid'] = 'SID'
     
     sources = parse_arguments(cc_config)
     print_config(cc_config, sources)
@@ -22,10 +30,16 @@ def main():
     source_filenames = []
     for source in sources:
         source_filenames.extend(collect_source_filenames(
-            source, cc_config['recursive'], tuple(ending_type)
+            source, cc_config['recursive'], tuple(map_ending_type)
         ))
 
-    print(source_filenames)
+    os.mkdir(cc_config['tmpdir'])
+    os.chdir(cc_config['tmpdir'])
+    
+    for file in source_filenames:
+        convert_file(file, cc_config, map_ending_type)
+
+    #shutil.rmtree(cc_config['tmpdir'])
     
 
 def print_config(config, sources):
@@ -34,6 +48,7 @@ def print_config(config, sources):
 
     print()
     print("recursive: ", config['recursive'])
+    print("tmpdir:    ", config['tmpdir'])
     print()
 
               
@@ -54,12 +69,22 @@ source files and directories can be given.
 
 Options:
   -r, --recursive:
-    Descend into subfolders for all folder sources.
+    Descend into subdirectories for all directory sources.
+  -f, --formats format[,format...]:
+    List of formats to save (wav, ogg, flac).
+  -d, --destination
+    The destination directory where all converted files will be placed. 
+    Default: Each output file is placed next to its source file.
 """
     
     # parse command line options
     try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], "hr", ["help", "recursive"])
+        opts, args = getopt.gnu_getopt(sys.argv[1:],
+                                       "hrfd",
+                                       ["help",
+                                        "recursive",
+                                        "formats",
+                                        "destination"])
     except getopt.error as msg:
         print(msg)
         print("for help use --help")
@@ -72,6 +97,10 @@ Options:
             sys.exit(0)
         if option in ("-r", "--recursive"):
             config['recursive'] = True
+        if option in ("-d", "--destination"):
+            config['destination'] = value
+        if option in ("-f", "--formats"):
+            config['formats'] = value.split(',')
             
     # process arguments
     # for arg in args:
@@ -111,6 +140,41 @@ def collect_source_filenames(source, recursive, endings):
 def conditional_append(list, name, endings):
     if name.endswith(endings):
         list.append(name)
+
+
+def convert_file(file, config, map_ending_type):
+    print("Converting " + file)
+
+    destdir = os.path.dirname(file)
+    if 'destination' in config:
+        destdir = config['destination']
+
+    if(not os.path.exists(destdir)):
+        os.makedirs(destdir)
+
+    for ending in tuple(map_ending_type):
+        if file.endswith(ending):
+            break
+    type = map_ending_type[ending]
+
+    # @todo look command up from map by type
+    command = ['sidplay2', '-s', '-w', file]
+    print(' '.join(command))
+    
+    p = Popen(command, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate()
+
+    filebase = os.path.basename(file[:-len(ending)])
+    wavfile = filebase + 'wav'
+    oggfile = filebase + 'ogg'
+    
+    wavfile_target = destdir + '/' + wavfile
+    oggfile_target = destdir + '/' + oggfile
+
+    if 'wav' in config['formats']:
+        shutil.copy(wavfile, wavfile_target)
+    # if 'ogg' in config['formats']:
+    #     encode_ogg(wavfile, oggfile)
 
 
 if __name__ == "__main__":
