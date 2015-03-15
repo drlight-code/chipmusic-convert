@@ -171,6 +171,7 @@ def convert_file(file, config, map_ending_type):
 
     # ...except when the wav files are present...
     if glob.glob(destdir + '/' + filebase + '*.wav'):
+        print(destdir + '/' + filebase + '*.wav' + ' is present')
         rebuildwav = False
 
     # ... rebuild wav.
@@ -179,24 +180,40 @@ def convert_file(file, config, map_ending_type):
         p = Popen(command, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
 
-    for wavfile in os.listdir('.'):
+    wavfiles = os.listdir('.')
+    if not wavfiles:
+        wavfiles = glob.glob(destdir + '/' + filebase + '*.wav')
+    for wavfile in wavfiles:
         if wavfile.endswith('.wav'):
             if 'wav' in config['formats']:
                 wavfile_target = destdir + '/' + wavfile
                 if not os.path.exists(wavfile_target):
                     shutil.copy(wavfile, wavfile_target)
             if 'ogg' in config['formats']:
-                oggfile = wavfile[:-3] + 'ogg'
+                oggfile = os.path.basename(wavfile[:-3]) + 'ogg'
                 oggfile_target = destdir + '/' + oggfile
                 if not os.path.exists(oggfile_target):
                     encode_ogg(wavfile, oggfile)
                     shutil.copy(oggfile, oggfile_target)
                     os.remove(oggfile)
-        os.remove(wavfile)
+            if 'flac' in config['formats']:
+                flacfile = os.path.basename(wavfile[:-3]) + 'flac'
+                flacfile_target = destdir + '/' + flacfile
+                if not os.path.exists(flacfile_target):
+                    encode_flac(wavfile, flacfile)
+                    shutil.copy(flacfile, flacfile_target)
+                    os.remove(flacfile)
+
+        if os.path.exists(os.path.basename(wavfile)):
+            os.remove(os.path.basename(wavfile))
         
 
 def encode_ogg(wavfile, oggfile):
     command = ['oggenc', '-q', str(8), '-o', oggfile, wavfile]
+    subprocess.call(command)
+
+def encode_flac(wavfile, flacfile):
+    command = ['flac', '-8', '-o', flacfile, wavfile]
     subprocess.call(command)
 
 if __name__ == "__main__":
