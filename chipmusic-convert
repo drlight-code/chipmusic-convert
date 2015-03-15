@@ -19,7 +19,7 @@ def main():
     cc_config['recursive'] = False
     cc_config['tmpdir'] = '/tmp/chipmusic-convert.' + \
                           str(datetime.datetime.now()).replace(' ', '.')
-    cc_config['formats'] = ['wav']
+    cc_config['formats'] = ['ogg']
     
     map_ending_type = {}
     map_ending_type['sid'] = 'SID'
@@ -80,11 +80,11 @@ Options:
     # parse command line options
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:],
-                                       "hrfd",
+                                       "hrf:d:",
                                        ["help",
                                         "recursive",
-                                        "formats",
-                                        "destination"])
+                                        "formats=",
+                                        "destination="])
     except getopt.error as msg:
         print(msg)
         print("for help use --help")
@@ -167,15 +167,22 @@ def convert_file(file, config, map_ending_type):
     filebase = os.path.basename(file[:-len(ending)])
     wavfile = filebase + 'wav'
     oggfile = filebase + 'ogg'
-    
     wavfile_target = destdir + '/' + wavfile
     oggfile_target = destdir + '/' + oggfile
 
     if 'wav' in config['formats']:
         shutil.copy(wavfile, wavfile_target)
-    # if 'ogg' in config['formats']:
-    #     encode_ogg(wavfile, oggfile)
+    if 'ogg' in config['formats']:
+        encode_ogg(wavfile, oggfile)
+        shutil.copy(oggfile, oggfile_target)
+        os.remove(oggfile)
 
+    os.remove(wavfile)
+        
+
+def encode_ogg(wavfile, oggfile):
+    command = ['oggenc', '-q', str(8), '-o', oggfile, wavfile]
+    subprocess.call(command)
 
 if __name__ == "__main__":
     main()
