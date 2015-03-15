@@ -7,14 +7,31 @@ import sys
 import getopt
 
 def main():
-    arg_config = parse_arguments()
+    arg_config, sources = parse_arguments()
 
     print("chipmusic-convert")
     print("recursive = ", arg_config['recursive'])
     
 
+# returns
+# 1. a dictionary with commandline argument settings
+# 2. the remaining non-option arguments
 def parse_arguments():
     arg_config = {}
+
+    help_text="""chipmusic-convert - convert chip music formats to wav/ogg/flac
+
+Synopsis:
+  chipmusic-convert [options] source ...
+
+'source' is either a single file one of the supported formats or a
+directory with files to be converted. After the options, any number of
+source files and directories can be given.
+
+Options:
+  -r, --recursive:
+    Descend into subfolders for all folder sources.
+"""
     
     # set default option values
     arg_config['recursive'] = False
@@ -30,7 +47,7 @@ def parse_arguments():
     # process options
     for option, value in opts:
         if option in ("-h", "--help"):
-            print(__doc__)
+            print(help_text)
             sys.exit(0)
         if option in ("-r", "--recursive"):
             arg_config['recursive'] = True
@@ -39,7 +56,7 @@ def parse_arguments():
     # for arg in args:
     #     process(arg) # process() is defined elsewhere
 
-    return arg_config
+    return arg_config, args
     
         
 if __name__ == "__main__":
