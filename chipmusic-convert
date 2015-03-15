@@ -7,6 +7,7 @@ import sys
 import os
 import subprocess
 import shutil
+import glob
 
 import getopt
 import datetime
@@ -32,6 +33,7 @@ def main():
         source_filenames.extend(collect_source_filenames(
             source, cc_config['recursive'], tuple(map_ending_type)
         ))
+    source_filenames.sort()
 
     os.mkdir(cc_config['tmpdir'])
     os.chdir(cc_config['tmpdir'])
@@ -60,7 +62,6 @@ def print_config(config, sources):
 def parse_arguments(config):
     help_text="""chipmusic-convert - convert chip music formats to wav/ogg/flac
 
-Synopsis:
   chipmusic-convert [options] source ...
 
 'source' is either a single file one of the supported formats or a
@@ -159,25 +160,39 @@ def convert_file(file, config, map_ending_type):
 
     # @todo look command up from map by type
     command = ['sidplay2', '-s', '-w', file]
-    print(' '.join(command))
-    
-    p = Popen(command, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = p.communicate()
 
-    filebase = os.path.basename(file[:-len(ending)])
-    wavfile = filebase + 'wav'
-    oggfile = filebase + 'ogg'
-    wavfile_target = destdir + '/' + wavfile
-    oggfile_target = destdir + '/' + oggfile
+    filebase = os.path.basename(file[:-(len(ending)+1)])
 
-    if 'wav' in config['formats']:
-        shutil.copy(wavfile, wavfile_target)
-    if 'ogg' in config['formats']:
-        encode_ogg(wavfile, oggfile)
-        shutil.copy(oggfile, oggfile_target)
-        os.remove(oggfile)
+    # if of any format the target files do not exist...
+    rebuildwav = False
+    for format in config['formats']:
+        if not glob.glob(destdir + '/' + filebase + '*.' + format):
+            rebuildwav = True
 
-    os.remove(wavfile)
+    # ...except when the wav files are present...
+    if glob.glob(destdir + '/' + filebase + '*.wav'):
+        rebuildwav = False
+
+    # ... rebuild wav.
+    if rebuildwav:
+        print(' '.join(command))
+        p = Popen(command, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+
+    for wavfile in os.listdir('.'):
+        if wavfile.endswith('.wav'):
+            if 'wav' in config['formats']:
+                wavfile_target = destdir + '/' + wavfile
+                if not os.path.exists(wavfile_target):
+                    shutil.copy(wavfile, wavfile_target)
+            if 'ogg' in config['formats']:
+                oggfile = wavfile[:-3] + 'ogg'
+                oggfile_target = destdir + '/' + oggfile
+                if not os.path.exists(oggfile_target):
+                    encode_ogg(wavfile, oggfile)
+                    shutil.copy(oggfile, oggfile_target)
+                    os.remove(oggfile)
+        os.remove(wavfile)
         
 
 def encode_ogg(wavfile, oggfile):
