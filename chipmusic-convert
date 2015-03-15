@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # chipmusic-convert
 # Convert chiptune tracker formats to wav/ogg/flac conveniently
@@ -6,6 +6,8 @@
 import sys
 import os
 import subprocess
+import concurrent.futures
+
 import shutil
 import glob
 
@@ -13,6 +15,7 @@ import getopt
 import datetime
 
 from subprocess import Popen, PIPE
+from concurrent.futures import ThreadPoolExecutor
 
 def main():
     # set default config values
@@ -37,9 +40,16 @@ def main():
 
     os.mkdir(cc_config['tmpdir'])
     os.chdir(cc_config['tmpdir'])
-    
+
+    executor = ThreadPoolExecutor(max_workers=2)
+    futures = []
+    fut = None
     for file in source_filenames:
-        convert_file(file, cc_config, map_ending_type)
+        fut = executor.submit(convert_file, file, cc_config, map_ending_type)
+        futures.append(fut)
+        print('submitted ' + str(len(futures)) + ' futures')
+
+    concurrent.futures.wait(futures)
 
     #shutil.rmtree(cc_config['tmpdir'])
     
@@ -73,9 +83,12 @@ Options:
     Descend into subdirectories for all directory sources.
   -f, --formats format[,format...]:
     List of formats to save (wav, ogg, flac). Default: ogg
-  -d, --destination
+  -d, --destination destdir
     The destination directory where all converted files will be placed. 
     Default: Each output file is placed next to its source file.
+  -j, --parallel numthreads
+    Use numthreads parallel threads for conversion.
+    
 """
     
     # parse command line options
