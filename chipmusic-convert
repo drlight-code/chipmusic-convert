@@ -8,18 +8,22 @@ import os
 import getopt
 
 def main():
-    cc_config = {}
-
     # set default config values
+    cc_config = {}
     cc_config['recursive'] = False
-    
 
+    ending_type = {}
+    ending_type['sid'] = 'SID'
+    print(ending_type.keys())
+    
     sources = parse_arguments(cc_config)
     print_config(cc_config, sources)
 
     source_filenames = []
     for source in sources:
-        source_filenames.extend(collect_source_filenames(cc_config, source))
+        source_filenames.extend(collect_source_filenames(
+            source, cc_config['recursive'], tuple(ending_type)
+        ))
 
     print(source_filenames)
     
@@ -76,28 +80,37 @@ Options:
     return args
 
 
-def collect_source_filenames(config, source):
+def collect_source_filenames(source, recursive, endings):
     source_filenames = []
-
+    
     if not os.path.exists(source):
         print("WARNING: source " + source + " does not exist! Ignoring.")
         return source_filenames
 
     if os.path.isdir(source):
-        if config['recursive']:
+        if recursive:
             for dirpath, dirnames, filenames in os.walk(source):
                 for filename in filenames:
-                    if filename.endswith('.sid'):
-                        source_filenames.append(os.path.abspath(dirpath+'/'+filename))
+                    conditional_append(source_filenames,
+                                       os.path.abspath(dirpath+'/'+filename),
+                                       endings)
         else:
             entries = os.listdir(source)
             for entry in entries:
-                if entry.endswith('.sid'):
-                    source_filenames.append(os.path.abspath(source+'/'+entry))
+                if entry.endswith(endings):
+                    conditional_append(source_filenames,
+                                       os.path.abspath(source+'/'+entry),
+                                       endings)
     else:
-        source_filenames.append(os.path.abspath(source))
+        conditional_append(source_filenames,
+                           os.path.abspath(source),
+                           endings)
 
     return source_filenames
+
+def conditional_append(list, name, endings):
+    if name.endswith(endings):
+        list.append(name)
 
 
 if __name__ == "__main__":
