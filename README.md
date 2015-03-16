@@ -1,7 +1,7 @@
 # chipmusic-convert
 
-Set of python scripts to conveniently convert different chipmusic
-formats into wav/ogg/flac.
+Python script to conveniently convert different chipmusic formats into
+wav/ogg/flac.
 
 ## Supported:
 * Commodore64 SID
@@ -16,8 +16,9 @@ formats into wav/ogg/flac.
 * http://asma.atari.org/ - Atari SAP Music Archive
 * http://sndh.atari.org/ - Atari ST YM2149 Archive
 * http://www.hvsc.de/ - High Voltage SID Collection
-* http://www.tphf.karoo.net/zhmain.htm - Grazey's Zak Hacks
+* http://modarchive.org/ - The Mod Archive
 * http://sc68.atari.org/musics.html - sc68 music collection
+* http://www.tphf.karoo.net/zhmain.htm - Grazey's Zak Hacks
 
 ## Other chipmusic sites:
 * http://www.creamhq.de/ymrockerz/index.php - YM Rockerz
@@ -40,3 +41,8 @@ ogg           | vorbis-tools - http://www.vorbis.com
 flac          | flac - https://xiph.org/flac
 
 pytaglib required for song information in ogg/flac headers.
+
+## Resources
+* MOD software on linux-sound: http://linux-sound.org/mod.html
+
+
