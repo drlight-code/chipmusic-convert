@@ -30,10 +30,12 @@ def main():
     cc_config['numthreads'] = 1
     
     map_ending_type = {
-        'sid' : 'SID',
-        'SID' : 'SID',
-        'snd' : 'SNDH',
-        'SND' : 'SNDH',
+        'sid'  : 'SID',
+        'SID'  : 'SID',
+        'snd'  : 'SNDH',
+        'SND'  : 'SNDH',
+        'sndh' : 'SNDH',
+        'SNDH' : 'SNDH',
     }
 
     sources = parse_arguments(cc_config)
@@ -58,7 +60,6 @@ def main():
         for fut in futures:
             if(fut.exception()):
                 print(fut.exception())
-#        concurrent.futures.wait(futures)
 
         shutil.rmtree(cc_config['tmpdir'])
     
@@ -211,13 +212,15 @@ def convert_file(file, config, map_ending_type):
 
     # ... rebuild wav.
     if rebuildwav or config['overwrite']:
-        render_to_wavfile(file, type, config['verbose'])
+        render_to_wavfile(type, file,
+                          filebase+'.wav',
+                          config['verbose'])
         
     conversion_formats = list(config['formats'])
     if 'wav' in conversion_formats:
          conversion_formats.remove('wav')
 
-    wavfiles = os.listdir('.')
+    wavfiles = glob.glob(filebase + '*.wav')
     if not wavfiles:
         wavfiles = glob.glob(destdir + '/' + filebase + '*.wav')
 
@@ -232,7 +235,7 @@ def convert_file(file, config, map_ending_type):
                 outfile = os.path.basename(wavfile[:-3]) + format
                 outfile_target = destdir + '/' + outfile
                 if not os.path.exists(outfile_target) or config['overwrite']:
-                    encode_wavfile(format, config['quality'],
+                    encode_wavfile(type, format, config['quality'],
                                    wavfile, outfile,
                                    config['verbose'])
                     shutil.copy(outfile, outfile_target)
@@ -241,30 +244,63 @@ def convert_file(file, config, map_ending_type):
         if os.path.exists(os.path.basename(wavfile)):
             os.remove(os.path.basename(wavfile))
 
-def render_to_wavfile(file, type, verbose):
-    command = {
-        'SID': ['sidplay2', '-s', '-w', file]
-    }[type]
+def render_to_wavfile(type, infile, wavfile, verbose):
+    {
+        'SID'  : render_sid,
+        'SNDH' : render_sndh
+    }[type](infile, wavfile, verbose)
+
+
+def render_sid(infile, wavfile, verbose):
+    command = ['sidplay2', '-s', '-w', infile]
 
     if verbose:
         print(' '.join(command))
-        subprocess.call(command)
+        p = Popen(command)
+        stdout, stderr = p.communicate()
     else:
         p = Popen(command, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
 
+def render_sndh(infile, wavfile, verbose):
+    command = ['sc68', infile]
+        
+    if verbose:
+        print(' '.join(command))
+        p = Popen(command, stdout=PIPE)
+        stdout, stderr = p.communicate()
+    else:
+        p = Popen(command, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
 
-def encode_wavfile(format, quality, wavfile, outfile, verbose):
-    command = {
-        'ogg':  ['oggenc', '-q', quality, '-o', outfile, wavfile],
-        'flac': ['flac', '-8', '-o', outfile, wavfile]
-    }[format]
+    outfile = open(wavfile, 'wb')
+    outfile.write(stdout)
+
+def encode_wavfile(type, format, quality, wavfile, outfile, verbose):
+    if format == 'ogg':
+        command = ['oggenc', '-q', quality]
+
+        if type == 'SNDH':
+            command.extend(['--raw'])
+            
+    if format == 'flac':
+        command = ['flac', '-8']
+
+        if type == 'SNDH':
+            command.extend(['--force-raw-format',
+                            '--endian=little',
+                            '--sign=signed',
+                            '--channels=2',
+                            '--bps=16',
+                            '--sample-rate=44100'])
+                           
+    command.extend(['-o', outfile, wavfile])
 
     if verbose:
         print(' '.join(command))
         subprocess.call(command)
     else:
-        print('Encoding:   ' + outfile)
+        print('Encoding: ' + outfile)
         p = Popen(command, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
 

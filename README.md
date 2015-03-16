@@ -3,15 +3,14 @@
 Set of python scripts to conveniently convert different chipmusic
 formats into wav/ogg/flac.
 
-## Planned support:
-* Atari SAP
-* Atari SNDH
-* Commodore64 SID
-* Amiga MOD
-* sc68 format
-
 ## Supported:
 * Commodore64 SID
+* Atari SNDH
+* sc68 format
+
+## Planned support:
+* Atari SAP
+* Amiga MOD
 
 ## Chipmusic archives:
 * http://asma.atari.org/ - Atari SAP Music Archive
@@ -32,12 +31,11 @@ chipmusic-convert relies on different software packages to do the
 actual conversion from the chipmusic formats to wav/ogg. The following
 table shows which packages are used for each of the formats:
 
-Format        | Package
+Formats       | Package
 ------------- | -------------
-SNDH          | sndplayer - http://sndplayer.atari.org/downloads.php
-sc68          | sc68 - http://sc68.atari.org/download.html
+SID           | sidplay2 - http://sidplay2.sourceforge.net/
+SNDH, sc68    | sc68 - http://sndplayer.atari.org/downloads.php
 ogg           | vorbis-tools - http://www.vorbis.com
 flac          | flac - https://xiph.org/flac/download.html
 
-Optional: saunaklub music collection (will be available on github
-soon)
+pytaglib for media metadata output.
