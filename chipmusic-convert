@@ -36,6 +36,8 @@ def main():
         'SND'  : 'SNDH',
         'sndh' : 'SNDH',
         'SNDH' : 'SNDH',
+        'sap'  : 'SAP',
+        'SAP'  : 'SAP',
     }
 
     sources = parse_arguments(cc_config)
@@ -142,10 +144,6 @@ Options:
         if option in ("-j", "--parallel"):
             config['numthreads'] = int(value)
             
-    # process arguments
-    # for arg in args:
-    #     process(arg) # process() is defined elsewhere
-
     return args
 
 
@@ -247,7 +245,8 @@ def convert_file(file, config, map_ending_type):
 def render_to_wavfile(type, infile, wavfile, verbose):
     {
         'SID'  : render_sid,
-        'SNDH' : render_sndh
+        'SNDH' : render_sndh,
+        'SAP' : render_sap,
     }[type](infile, wavfile, verbose)
 
 
@@ -275,6 +274,17 @@ def render_sndh(infile, wavfile, verbose):
 
     outfile = open(wavfile, 'wb')
     outfile.write(stdout)
+
+def render_sap(infile, wavfile, verbose):
+    command = ['asapconv', '-o', wavfile, infile]
+
+    if verbose:
+        print(' '.join(command))
+        p = Popen(command)
+        stdout, stderr = p.communicate()
+    else:
+        p = Popen(command, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
 
 def encode_wavfile(type, format, quality, wavfile, outfile, verbose):
     if format == 'ogg':
