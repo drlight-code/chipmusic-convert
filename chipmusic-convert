@@ -32,10 +32,12 @@ def main():
     map_ending_type = {
         'sid'  : 'SID',
         'SID'  : 'SID',
-        'snd'  : 'SNDH',
-        'SND'  : 'SNDH',
-        'sndh' : 'SNDH',
-        'SNDH' : 'SNDH',
+        'snd'  : 'SC68',
+        'SND'  : 'SC68',
+        'sndh' : 'SC68',
+        'SNDH' : 'SC68',
+        'sc68' : 'SC68',
+        'SC68' : 'SC68',
         'sap'  : 'SAP',
         'SAP'  : 'SAP',
     }
@@ -245,8 +247,8 @@ def convert_file(file, config, map_ending_type):
 def render_to_wavfile(type, infile, wavfile, verbose):
     {
         'SID'  : render_sid,
-        'SNDH' : render_sndh,
-        'SAP' : render_sap,
+        'SC68' : render_sc68,
+        'SAP'  : render_sap,
     }[type](infile, wavfile, verbose)
 
 
@@ -261,7 +263,7 @@ def render_sid(infile, wavfile, verbose):
         p = Popen(command, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
 
-def render_sndh(infile, wavfile, verbose):
+def render_sc68(infile, wavfile, verbose):
     command = ['sc68', infile]
         
     if verbose:
@@ -290,13 +292,13 @@ def encode_wavfile(type, format, quality, wavfile, outfile, verbose):
     if format == 'ogg':
         command = ['oggenc', '-q', quality]
 
-        if type == 'SNDH':
+        if type == 'SC68':
             command.extend(['--raw'])
             
     if format == 'flac':
         command = ['flac', '-8']
 
-        if type == 'SNDH':
+        if type == 'SC68':
             command.extend(['--force-raw-format',
                             '--endian=little',
                             '--sign=signed',
