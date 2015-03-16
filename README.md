@@ -28,8 +28,8 @@ please let me know!
 ## Required software by format
 
 chipmusic-convert relies on different software packages to do the
-actual conversion from the chipmusic formats to wav/ogg. The following
-table shows which packages are used for each of the formats:
+actual conversion from the chipmusic formats to wav/ogg/flac. The
+following table shows which packages are used for each of the formats:
 
 Formats       | Package
 ------------- | -------------
@@ -38,4 +38,4 @@ SNDH, sc68    | sc68 - http://sndplayer.atari.org/downloads.php
 ogg           | vorbis-tools - http://www.vorbis.com
 flac          | flac - https://xiph.org/flac/download.html
 
-pytaglib for media metadata output.
+pytaglib required for song information in ogg/flac headers.
