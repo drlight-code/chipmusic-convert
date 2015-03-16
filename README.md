@@ -50,7 +50,7 @@ following table shows which packages are used for each of the formats:
 
 Formats       | Package
 ------------- | -------------
-SID           | sidplay2 - http://sidplay2.sf.net
+SID           | sidplayfp - https://bel.fi/alankila/c64-sw/index-cpp.html
 SNDH, sc68    | sc68 - http://sndplayer.atari.org
 SAP           | asapconv - http://asap.sf.net
 ogg           | vorbis-tools - http://www.vorbis.com
@@ -60,5 +60,5 @@ pytaglib required for song information in ogg/flac headers.
 
 ## Resources
 * MOD software on linux-sound: http://linux-sound.org/mod.html
-
+* sidplay2 - http://sidplay2.sf.net
 
