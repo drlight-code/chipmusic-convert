@@ -6,10 +6,10 @@ formats into wav/ogg/flac.
 ## Supported:
 * Commodore64 SID
 * Atari SNDH
+* Atari SAP
 * sc68 format
 
 ## Planned support:
-* Atari SAP
 * Amiga MOD
 
 ## Chipmusic archives:
@@ -33,9 +33,10 @@ following table shows which packages are used for each of the formats:
 
 Formats       | Package
 ------------- | -------------
-SID           | sidplay2 - http://sidplay2.sourceforge.net/
-SNDH, sc68    | sc68 - http://sndplayer.atari.org/downloads.php
+SID           | sidplay2 - http://sidplay2.sf.net
+SNDH, sc68    | sc68 - http://sndplayer.atari.org
+SAP           | asapconv - http://asap.sf.net
 ogg           | vorbis-tools - http://www.vorbis.com
-flac          | flac - https://xiph.org/flac/download.html
+flac          | flac - https://xiph.org/flac
 
 pytaglib required for song information in ogg/flac headers.
